@@ -7,8 +7,6 @@ load "../testlib"
 
 test_setup() {
 
-	skip "This test is broken on github actions"
-
 	create_test_environment "$TEST_NAME"
 
 }
@@ -23,7 +21,7 @@ test_teardown() {
 
 }
 
-@test "AUT001: Basic test, Check auto-update enable" {
+@test "AUT001: Basic test, Check auto-update disable enable" {
 
 	# perform autoupdate disable
 	run sudo sh -c "$SWUPD autoupdate --disable --path=$PATH_PREFIX"
@@ -57,5 +55,52 @@ test_teardown() {
 	assert_status_is_not "$SWUPD_OK"
 	run sudo sh -c "test -c $PATH_PREFIX/etc/systemd/system/swupd-update.timer"
 	assert_status_is_not "$SWUPD_OK"
+
+}
+
+@test "AUT002: Check auto-update status" {
+
+	# check autoupdate status
+	run sudo sh -c "$SWUPD autoupdate --path=$PATH_PREFIX"
+	assert_status_is "$SWUPD_OK"
+	expected_output=$(cat <<-EOM
+		Enabled
+	EOM
+	)
+	assert_is_output "$expected_output"
+
+	# check for files(should not exist)
+	run sudo sh -c "test -c $PATH_PREFIX/etc/systemd/system/swupd-update.service"
+	assert_status_is_not "$SWUPD_OK"
+	run sudo sh -c "test -f $PATH_PREFIX/etc/systemd/system/swupd-update.service"
+	assert_status_is "$SWUPD_OK"
+
+	run sudo sh -c "test -e $PATH_PREFIX/etc/systemd/system/swupd-update.timer"
+	assert_status_is_not "$SWUPD_OK"
+
+	# perform autoupdate disable
+	run sudo sh -c "$SWUPD autoupdate --disable --path=$PATH_PREFIX"
+	assert_status_is "$SWUPD_OK"
+	expected_output=$(cat <<-EOM
+		Warning: disabling automatic updates may take you out of compliance with your IT policy
+		Running systemctl to disable updates
+	EOM
+	)
+	assert_is_output "$expected_output"
+
+	# check autoupdate status
+	run sudo sh -c "$SWUPD autoupdate --path=$PATH_PREFIX"
+	assert_status_is "$SWUPD_OK"
+	expected_output=$(cat <<-EOM
+		Disabled
+	EOM
+	)
+	assert_is_output "$expected_output"
+
+	# check for files(should exist and point to /dev/null)
+	run sudo sh -c "test -c $PATH_PREFIX/etc/systemd/system/swupd-update.service"
+	assert_status_is "$SWUPD_OK"
+	run sudo sh -c "test -c $PATH_PREFIX/etc/systemd/system/swupd-update.timer"
+	assert_status_is "$SWUPD_OK"
 
 }

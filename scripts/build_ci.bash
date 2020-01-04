@@ -35,6 +35,7 @@ sudo apt-key add llvm.gpg.key
 sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
 sudo apt-get update
 sudo apt-get install -y clang-format-9
+sudo apt-get install -y systemd
 
 # Build Swupd
 autoreconf --verbose --warnings=none --install --force
